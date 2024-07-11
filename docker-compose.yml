@@ -1,0 +1,16 @@
+﻿version: "4.0"
+
+services:
+  pgs.template-placeholder-bot:
+    image: harlok13/pgs.template-placeholder-bot:latest
+    build:
+      context: .
+      dockerfile: PGS.TemplatePlaceholderBot/Dockerfile
+    volumes:
+      - ./data:/app/data:ro
+    environment:
+      - TOKEN=${TOKEN}
+      - ENVIRONMENT=Development
+        
+    stdin_open: true
+    tty: true
