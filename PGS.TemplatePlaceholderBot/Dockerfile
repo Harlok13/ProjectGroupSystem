@@ -17,5 +17,6 @@ RUN dotnet publish "PGS.TemplatePlaceholderBot.csproj" -c $BUILD_CONFIGURATION -
 
 FROM base AS final
 WORKDIR /app
+RUN mkdir files
 COPY --from=publish /app/publish .
 ENTRYPOINT ["dotnet", "PGS.TemplatePlaceholderBot.dll"]
