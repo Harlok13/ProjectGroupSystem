@@ -20,124 +20,132 @@ Console.WriteLine($"StartBot - {botClient.BotId}");
 
 async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
 {
-    if (update.Message is not { } message)
-        return;
-    
-    if (update.Message.Text != string.Empty)
+    try
     {
-        Console.WriteLine("hi");
-        await botClient.SendTextMessageAsync(
-            chatId: message.Chat.Id,
-            text: "Дарова, Рамзес!");
-    }
-    //
-    //     if (message.Type != MessageType.Document)
-    //         return;
-    //
+        if (update.Message is not { } message)
+            return;
 
-    // var fileId = message.Document.FileId;
-    // var excelPath = "/app/excel/documents";
-    // var excelPath = "/Users/Harlok/Desktop";
-    // var tempPath = Path.GetTempPath();
-    // Directory.CreateDirectory(tempPath);
-    // var file = await botClient.GetFileAsync(fileId, cancellationToken);
-    // var filePath = Path.Combine(tempPath, file.FilePath);
-    // await using var st = new FileStream(filePath, FileMode.Create);
-    // await botClient.DownloadFileAsync(file.FilePath, st, cancellationToken);
-
-
-    var fileInfo = await botClient.GetFileAsync(message.Document.FileId);
-    // Download file from server (step 2)
-    // await using (var fileStream = System.IO.File.OpenWrite("/Users/Harlok/Desktop/file.xslx"))
-    await using (var fileStream = File.OpenWrite("/app/files/file.xlsx"))
-    {
-        await botClient.DownloadFileAsync(
-            filePath: fileInfo.FilePath,
-            destination: fileStream
-        );
-    }
-
-    // parse the file using Aspose.Cells
-    // var workbook = new Workbook(filePath);
-    // var workbook = new Workbook(fileInfo.FilePath);
-    var workbook = new Workbook("/app/files/file.xlsx");
-    var sheet = workbook.Worksheets[0];
-
-    var fileGuids = new List<Guid>();
-    for (int rowIndex = 1; rowIndex <= sheet.Cells.MaxRow; rowIndex++)
-    {
-        // Получаем текущую строку
-        Row row = sheet.Cells.Rows[rowIndex];
-
-        // Обходим все ячейки в текущей строке
-        var wReader = new WordReader();
-        // var templatePath = "/Users/Harlok/Desktop/template.docx";
-        // var templatePath = $"{Directory.GetCurrentDirectory()}/template.docx";
-        var templatePath = $"/app/files/template.docx";
-        var foo = wReader.GetKeywords(templatePath);
-
-        var keywoards = new Dictionary<string, string>();
-
-        var i = 0;
-
-        // wReader.GetKeywords("/Users/Harlok/Desktop/template.docx").ForEach(Console.WriteLine);
-        foreach (Cell cell in row)
+        if (update.Message.Text != string.Empty)
         {
-            // Выводим значение ячейки в консоль
-            keywoards.Add(foo[i], cell.Value.ToString());
-            Console.Write(cell.Value + "\t");
-            i++;
+            Console.WriteLine("hi");
+            await botClient.SendTextMessageAsync(
+                chatId: message.Chat.Id,
+                text: "Дарова, Рамзес!");
+            return;
+        }
+        //
+        //     if (message.Type != MessageType.Document)
+        //         return;
+        //
+
+        // var fileId = message.Document.FileId;
+        // var excelPath = "/app/excel/documents";
+        // var excelPath = "/Users/Harlok/Desktop";
+        // var tempPath = Path.GetTempPath();
+        // Directory.CreateDirectory(tempPath);
+        // var file = await botClient.GetFileAsync(fileId, cancellationToken);
+        // var filePath = Path.Combine(tempPath, file.FilePath);
+        // await using var st = new FileStream(filePath, FileMode.Create);
+        // await botClient.DownloadFileAsync(file.FilePath, st, cancellationToken);
+
+
+        var fileInfo = await botClient.GetFileAsync(message.Document.FileId);
+        // Download file from server (step 2)
+        // await using (var fileStream = System.IO.File.OpenWrite("/Users/Harlok/Desktop/file.xslx"))
+        await using (var fileStream = File.OpenWrite("/app/files/file.xlsx"))
+        {
+            await botClient.DownloadFileAsync(
+                filePath: fileInfo.FilePath,
+                destination: fileStream
+            );
         }
 
-        i = 0;
-        // Переходим на новую строку после вывода всех ячеек текущей строки
-        Console.WriteLine();
-        var fileGuid = wReader.FillWord(templatePath, keywoards);
-        fileGuids.Add(fileGuid);
-    }
+        // parse the file using Aspose.Cells
+        // var workbook = new Workbook(filePath);
+        // var workbook = new Workbook(fileInfo.FilePath);
+        var workbook = new Workbook("/app/files/file.xlsx");
+        var sheet = workbook.Worksheets[0];
 
-    var tempDir = Path.GetTempPath();
-
-
-    // Добавляем правило для разрешения полного доступа для текущего пользователя
-    // Syscall.chmod(tempDir, FilePermissions.ALLPERMS);
-
-    Directory.CreateDirectory(tempDir);
-
-    // ProcessStartInfo startInfo = new ProcessStartInfo() 
-    // {
-    //     FileName = "/bin/bash",
-    //     Arguments = $"-c \" sudo chmod +x  {tempDir}\" ",
-    //
-    //     CreateNoWindow = true
-    // };
-    //
-    // Process proc = new Process() { StartInfo = startInfo, };
-    // proc.Start();
-
-    string archiveFileName = $"{tempDir}/documents.zip";
-    await using (FileStream archiveFile = File.Create(archiveFileName))
-    {
-        using (ZipArchive archive = new ZipArchive(archiveFile, ZipArchiveMode.Create))
+        var fileGuids = new List<Guid>();
+        for (int rowIndex = 1; rowIndex <= sheet.Cells.MaxRow; rowIndex++)
         {
-            foreach (var fileGuid in fileGuids)
+            // Получаем текущую строку
+            Row row = sheet.Cells.Rows[rowIndex];
+
+            // Обходим все ячейки в текущей строке
+            var wReader = new WordReader();
+            // var templatePath = "/Users/Harlok/Desktop/template.docx";
+            // var templatePath = $"{Directory.GetCurrentDirectory()}/template.docx";
+            var templatePath = $"/app/files/template.docx";
+            var foo = wReader.GetKeywords(templatePath);
+
+            var keywoards = new Dictionary<string, string>();
+
+            var i = 0;
+
+            // wReader.GetKeywords("/Users/Harlok/Desktop/template.docx").ForEach(Console.WriteLine);
+            foreach (Cell cell in row)
             {
-                // string path = Path.Combine(Environment.UserDomainName, Environment.UserName, "Desktop", "words",
-                //     $"{fileGuid}.docx");
-                // string path = $"/Users/Harlok/Desktop/words/{fileGuid}.docx";
-                string path = $"{Directory.GetCurrentDirectory()}/{fileGuid}.docx";
-                archive.CreateEntryFromFile(path, fileGuid + ".docx");
+                // Выводим значение ячейки в консоль
+                keywoards.Add(foo[i], cell.Value.ToString());
+                Console.Write(cell.Value + "\t");
+                i++;
+            }
+
+            i = 0;
+            // Переходим на новую строку после вывода всех ячеек текущей строки
+            Console.WriteLine();
+            var fileGuid = wReader.FillWord(templatePath, keywoards);
+            fileGuids.Add(fileGuid);
+        }
+
+        var tempDir = Path.GetTempPath();
+
+
+        // Добавляем правило для разрешения полного доступа для текущего пользователя
+        // Syscall.chmod(tempDir, FilePermissions.ALLPERMS);
+
+        Directory.CreateDirectory(tempDir);
+
+        // ProcessStartInfo startInfo = new ProcessStartInfo() 
+        // {
+        //     FileName = "/bin/bash",
+        //     Arguments = $"-c \" sudo chmod +x  {tempDir}\" ",
+        //
+        //     CreateNoWindow = true
+        // };
+        //
+        // Process proc = new Process() { StartInfo = startInfo, };
+        // proc.Start();
+
+        string archiveFileName = $"{tempDir}/documents.zip";
+        await using (FileStream archiveFile = File.Create(archiveFileName))
+        {
+            using (ZipArchive archive = new ZipArchive(archiveFile, ZipArchiveMode.Create))
+            {
+                foreach (var fileGuid in fileGuids)
+                {
+                    // string path = Path.Combine(Environment.UserDomainName, Environment.UserName, "Desktop", "words",
+                    //     $"{fileGuid}.docx");
+                    // string path = $"/Users/Harlok/Desktop/words/{fileGuid}.docx";
+                    string path = $"{Directory.GetCurrentDirectory()}/{fileGuid}.docx";
+                    archive.CreateEntryFromFile(path, fileGuid + ".docx");
+                }
             }
         }
-    }
 
-    await using (FileStream archiveStream = File.OpenRead(archiveFileName))
+        await using (FileStream archiveStream = File.OpenRead(archiveFileName))
+        {
+            await botClient.SendDocumentAsync(
+                chatId: update.Message.Chat.Id,
+                document: new InputFileStream(archiveStream, "documents.zip"),
+                caption: "Здесь новые ворд-документы"
+            );
+        }
+    }
+    catch (Exception ex)
     {
-        await botClient.SendDocumentAsync(
-            chatId: update.Message.Chat.Id,
-            document: new InputFileStream(archiveStream, "documents.zip"),
-            caption: "Здесь новые ворд-документы"
-        );
+        Console.WriteLine(ex);
     }
 
     // Удаляем временную директорию и все файлы в ней
