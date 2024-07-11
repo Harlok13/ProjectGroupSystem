@@ -1,7 +1,6 @@
 using Aspose.Cells;
-using Telegram.Bot.Types;
 
-namespace TelegramBot;
+namespace PGS.TemplatePlaceholderBot;
 
 class XlsxProcessing
 {

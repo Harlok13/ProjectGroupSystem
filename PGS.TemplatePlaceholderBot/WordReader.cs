@@ -2,8 +2,9 @@ using System.Text.RegularExpressions;
 using DocumentFormat.OpenXml;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Wordprocessing;
+using TelegramBot;
 
-namespace TelegramBot;
+namespace PGS.TemplatePlaceholderBot;
 
 public class WordReader : IWordReader
 {
