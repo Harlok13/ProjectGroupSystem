@@ -13,17 +13,25 @@
         <Link>.dockerignore</Link>
       </Content>
       <None Remove="files\template.docx" />
-      <Content Include="files\template.docx">
+      <None Update=".env">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </Content>
+      </None>
     </ItemGroup>
 
     <ItemGroup>
       <PackageReference Include="Aspose.Cells" Version="24.6.0" />
       <PackageReference Include="DocumentFormat.OpenXml" Version="3.0.2" />
+      <PackageReference Include="DotNetEnv" Version="3.0.0" />
+      <PackageReference Include="Serilog" Version="4.0.0" />
+      <PackageReference Include="Serilog.Sinks.Console" Version="6.0.0" />
         <!--        SkiaSharp.NativeAssets.Linux.NoDependencies нужен для DocumentFormat.OpenXm для запуска в контейнере-->
       <PackageReference Include="SkiaSharp.NativeAssets.Linux.NoDependencies" Version="2.88.8" />
+      <PackageReference Include="Stateless" Version="5.16.0" />
       <PackageReference Include="Telegram.Bot" Version="19.0.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="files\templates\" />
     </ItemGroup>
 
 </Project>

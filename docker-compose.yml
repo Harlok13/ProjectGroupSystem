@@ -9,8 +9,10 @@ services:
     volumes:
       - ./PGS.TemplatePlaceholderBot/files:/app/files
     environment:
-      - TOKEN=${TOKEN}
       - ENVIRONMENT=Development
-        
+      - TOKEN=${TOKEN}
+      - VOLUME_PATH=${VOLUME_PATH}
     stdin_open: true
     tty: true
+    env_file:
+      - ./PGS.TemplatePlaceholderBot/.env

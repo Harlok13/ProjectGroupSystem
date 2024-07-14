@@ -2,18 +2,18 @@ using System.Text.RegularExpressions;
 using DocumentFormat.OpenXml;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Wordprocessing;
+using PGS.TemplatePlaceholderBot.Helpers;
 
 namespace PGS.TemplatePlaceholderBot.DocReaders;
 
-public static class WordReader
+public class WordReader(string _filePath) : IDisposable
 {
-    public static List<string> GetKeywords(string filePath)
-    {
-        using WordprocessingDocument doc = WordprocessingDocument
-            .Open(filePath, false);
+    private readonly WordprocessingDocument _doc = WordprocessingDocument.Open(_filePath, false);
 
+    public List<string> GetKeywords()
+    {
         List<string> keywords = new();
-        Body body = doc.MainDocumentPart?.Document.Body
+        Body body = _doc.MainDocumentPart?.Document.Body
             ?? throw new Exception("The body of the word document is missing.");
         
         foreach (Paragraph paragraph in body.Elements<Paragraph>())
@@ -32,20 +32,17 @@ public static class WordReader
         return keywords;
     }
 
-    public static Guid FillWordTemplate(string templatePath, Dictionary<string, string> keywords)
+    public string CreateWordAndFillByTemplate(Dictionary<string, string> keywords)
     {
         var resultFileGuid = Guid.NewGuid();
-        var resultFilePath = $"{Directory.GetCurrentDirectory()}/{resultFileGuid.ToString()}.docx";
+        var resultFilePath = $"{EnvironmentHelper.GetVolumePath()}/{resultFileGuid.ToString()}.docx";
         
-        using WordprocessingDocument templateDoc = WordprocessingDocument
-            .Open(templatePath, false);
+        OpenXmlElement templateBody = _doc.MainDocumentPart?.Document.Body?.CloneNode(deep: true) 
+            ?? throw new Exception("The body of the word document is missing.");
         
-        MainDocumentPart templateDocPart = templateDoc.MainDocumentPart;
-        
-        Body templateBody = templateDocPart.Document.Body;
         foreach (var value in keywords)
         {
-            foreach (Paragraph paragraph in templateDocPart.Document.Body.Elements<Paragraph>())
+            foreach (Paragraph paragraph in templateBody.Elements<Paragraph>())
             {
                 string text = string.Join(string.Empty, paragraph.Descendants<Text>()
                     .Select(t => t.Text));
@@ -64,13 +61,24 @@ public static class WordReader
             }
         }
 
+        CreateResultDoc(resultFilePath, templateBody);
+
+        return resultFilePath;
+    }
+
+    private void CreateResultDoc(string resultFilePath, OpenXmlElement templateBody)
+    {
         using WordprocessingDocument resultDoc = WordprocessingDocument
             .Create(resultFilePath, WordprocessingDocumentType.Document);
         
         resultDoc.AddMainDocumentPart();
-        resultDoc.MainDocumentPart.Document = new Document(templateBody.CloneNode(true));
+        resultDoc.MainDocumentPart!.Document = new Document(templateBody);
         resultDoc.MainDocumentPart.Document.Save();
+    }
 
-        return resultFileGuid;
+    public void Dispose()
+    {
+        _doc.Dispose();
+        GC.SuppressFinalize(this);
     }
 }
