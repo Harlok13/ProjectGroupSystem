@@ -8,7 +8,6 @@ public class ExcelReader : IDisposable
 {
     private Workbook _workbook = null!;
     private string _filePath = null!;
-    private List<string> _resultFilePaths = null!;
 
     private ExcelReader() { }
     
@@ -31,47 +30,21 @@ public class ExcelReader : IDisposable
         return excelReader;
     }
     
-    // public List<string> CreateAndFillDocs(string templatePath)
-    // {
-    //     Worksheet sheet = _workbook.Worksheets[0];
-    //     // int skipHeaderRow = 1;
-    //     int skipHeaderRow = 3;
-    //
-    //     _resultFilePaths = new List<string>(sheet.Cells.MaxRow - skipHeaderRow);
-    //     
-    //     using WordReader wordReader = new WordReader(templatePath);
-    //     List<string> keywords = wordReader.GetKeywords();
-    //     
-    //     for (int rowIndex = skipHeaderRow; rowIndex <= sheet.Cells.MaxRow; rowIndex++)
-    //     {
-    //         Row row = sheet.Cells.Rows[rowIndex];
-    //
-    //         Dictionary<string, string> keyValuePair = FillKeyValuePair(keywords, row);
-    //         
-    //         string resultFilePath = wordReader.CreateWordAndFillByTemplate(keyValuePair);
-    //         _resultFilePaths.Add(resultFilePath);
-    //     }
-    //
-    //     return _resultFilePaths;
-    // }
-    
     public List<Dictionary<string, object>> GetKeyValuePairs(string templatePath)
     {
         Worksheet sheet = _workbook.Worksheets[0];
         int skipHeaderRow = 5;
         int skipColumn = 3;
 
-        // _resultFilePaths = new List<string>(sheet.Cells.MaxColumn - skipColumn);
         List<Dictionary<string, object>> keyValuePairsList = new (sheet.Cells.MaxColumn - skipColumn);
         
         using WordReader wordReader = new WordReader(templatePath);
-        // List<string> keywords = wordReader.GetKeywords();
+        
         int imageIndex = 1;
         int columnIndex = skipColumn;
-        // for (int columnIndex = skipColumn; columnIndex <= sheet.Cells.MaxColumn; columnIndex++)
+        
         while (true)
         {
-            // Cell cell = sheet.Cells[rowIndex];
             char column = (char)('A' + columnIndex);
             if (string.IsNullOrWhiteSpace(sheet.Cells[$"{column}5"].StringValue))
                 break;
@@ -79,17 +52,14 @@ public class ExcelReader : IDisposable
             Dictionary<string, object> keyValuePairs = FillKeyValuePair(column, skipHeaderRow, imageIndex, sheet);
             keyValuePairsList.Add(keyValuePairs);
             
-            // string resultFilePath = wordReader.CreateWordAndFillByTemplate(keyValuePair);
-            // string resultFilePath = "wordReader.CreateWordAndFillByTemplate(keyValuePair);";
-            // _resultFilePaths.Add(resultFilePath);
             imageIndex++;
             columnIndex++;
         }
 
         return keyValuePairsList;
-        // return _resultFilePaths;
     }
     
+    [Obsolete]
     public void CreateExcelByTemplate(string? templatePath)
     {
         ArgumentNullException.ThrowIfNull(templatePath);
@@ -102,11 +72,9 @@ public class ExcelReader : IDisposable
 
         for (int index = 0; index < keywords.Count; index++)
         {
-            // sheet.Cells[$"{(char)('A' + index)}{index + 1}"].PutValue(keywords[index]);
             char column = (char)('A' + index);
-            int row = index + 1; // Start from the first row
+            int row = index + 1;  // Start from the first row
 
-            // If the keyword is not the first one, shift its row by its index
             if (index > 0)
             {
                 row -= index;
@@ -117,18 +85,6 @@ public class ExcelReader : IDisposable
         
         _workbook.Save(_filePath);
     }
-    
-    // private Dictionary<string, string> FillKeyValuePair(List<string> keywords, Row row)
-    // {
-    //     Dictionary<string, string> keyValuePair = new();
-    //         
-    //     for (int cellIndex = 0; cellIndex < row.Cast<Cell>().Count(); cellIndex++)
-    //     {
-    //         keyValuePair.Add(keywords[cellIndex], row[cellIndex].Value.ToString() ?? "");
-    //     }
-    //
-    //     return keyValuePair;
-    // }
 
     private Dictionary<string, object> FillKeyValuePair(char column, int startRowIndex, int imageIndex, Worksheet sheet)
     {
@@ -138,9 +94,11 @@ public class ExcelReader : IDisposable
         {
             string columnName = $"{column}{rowIndex + startRowIndex}";
             string key = sheet.Cells[$"A{rowIndex + startRowIndex}"].StringValue;
+            
             Cell cell = sheet.Cells[columnName];
 
-            if (columnName.EndsWith("11"))
+            const string rowIndexOfPicture = "11";
+            if (columnName.EndsWith(rowIndexOfPicture))
             {
                 try
                 {
@@ -163,8 +121,10 @@ public class ExcelReader : IDisposable
         }
         
         // todo create class TemplatePairs with property FileName
-        string fileName = sheet.Cells[$"{column}7"].StringValue;
-        fileName = fileName.Replace("/", ":");
+        const string rowIndexOfFileName = "7";
+        string fileName = sheet.Cells[$"{column}{rowIndexOfFileName}"].StringValue;
+        fileName = fileName.Replace("/", ":");  // escaping slash
+        
         keyValuePair.Add("FileName", fileName);
 
         return keyValuePair;
