@@ -11,12 +11,12 @@ public class TemplateNumberForDeleteMiddleware : IMiddleware
 {
     public async Task HandleUpdateAsync(Update update, User user, Func<Task> next, CancellationToken cT)
     {
-        if (user.StateMachine.State != EBotState.WaitingTemplateNumberForDelete)
-            return;
+        // if (user.StateMachine.State != EBotState.WaitingTemplateNumberForDelete)
+        //     return;
         
         Log.Information("EBotState.WaitingTemplateNumberForDelete");
-
-        await user.StateMachine.FireAsync(EBotTrigger.EnterTemplateNumberForDelete, cT);
+        await next();
+        // await user.StateMachine.FireAsync(EBotTrigger.EnterTemplateNumberForDelete, cT);
     }
 
     public Task HandlePollingErrorAsync(ITelegramBotClient botClient, Exception ex, CancellationToken cT)

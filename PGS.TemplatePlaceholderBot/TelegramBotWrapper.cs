@@ -25,7 +25,7 @@ public class TelegramBotWrapper
         UpdateDispatcher dispatcher = new(
             cache,
             RegisterUpdateHandlers(cache, storage),
-            RegisterMiddlewares());
+            RegisterMiddlewares(cache, storage));
         
         botClient.StartReceiving(
             updateHandler: dispatcher.DispatchAsync,
@@ -43,6 +43,7 @@ public class TelegramBotWrapper
     {
         IUpdateHandler[] handlers =
         [
+            // new IncorrectStateActionHandler(cache),  // must come first
             new DocumentHandler(cache),  // must come first before document handlers
             new WordTemplateHandler(cache),
             new ExcelDataHandler(cache),
@@ -53,12 +54,13 @@ public class TelegramBotWrapper
         return handlers;
     }
 
-    private IMiddleware[] RegisterMiddlewares()
+    private IMiddleware[] RegisterMiddlewares(IMemoryCache cache, IFileStorage storage)
     {
         IMiddleware[] middlewares =
         [
-            new TemplateNumberForDeleteMiddleware(),
-            new TemplateNumberForChoiceMiddleware(),
+            new IncorrectStateActionMiddleware(cache, storage),
+            // new TemplateNumberForDeleteMiddleware(),
+            // new TemplateNumberForChoiceMiddleware(),
         ];
 
         return middlewares;

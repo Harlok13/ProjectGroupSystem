@@ -10,7 +10,7 @@ using Telegram.Bot.Types;
 
 namespace PGS.TemplatePlaceholderBot.Handlers;
 
-public class WordTemplateHandler(IMemoryCache _cache) : IUpdateHandler, IDocumentDownloader
+public class WordTemplateHandler(IMemoryCache _cache) : UpdateHandlerBase, IUpdateHandler, IDocumentDownloader
 {
     public async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken cT)
     {
@@ -59,10 +59,5 @@ public class WordTemplateHandler(IMemoryCache _cache) : IUpdateHandler, IDocumen
                 text: $"Текущий шаблон изменен на \"{message.Document.FileName}\"",
                 cancellationToken: cT);
         }
-    }
-
-    public Task HandlePollingErrorAsync(ITelegramBotClient botClient, Exception exception, CancellationToken cancellationToken)
-    {
-        throw new NotImplementedException();
     }
 }

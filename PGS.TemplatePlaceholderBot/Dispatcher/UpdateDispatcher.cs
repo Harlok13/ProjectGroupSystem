@@ -43,7 +43,7 @@ public class UpdateDispatcher(
             Func<Task> next = async () => await Task.CompletedTask;
             User user = _cache.GetUser(update.Message.Chat.Id);
             
-            foreach (IMiddleware middleware in _middlewares.Reverse())
+            foreach (IMiddleware middleware in _middlewares)
             {
                 try
                 {
