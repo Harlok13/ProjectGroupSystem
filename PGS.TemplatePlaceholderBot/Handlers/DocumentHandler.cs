@@ -1,5 +1,6 @@
 using PGS.TemplatePlaceholderBot.Cache;
 using PGS.TemplatePlaceholderBot.Constants;
+using PGS.TemplatePlaceholderBot.Handlers.Base;
 using Serilog;
 using Telegram.Bot;
 using Telegram.Bot.Polling;
@@ -7,7 +8,7 @@ using Telegram.Bot.Types;
 
 namespace PGS.TemplatePlaceholderBot.Handlers;
 
-public class DocumentHandler(IMemoryCache _cache) : IUpdateHandler
+public class DocumentHandler(IMemoryCache _cache) : UpdateHandlerBase,IUpdateHandler
 {
     public async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken cT)
     {
@@ -25,10 +26,5 @@ public class DocumentHandler(IMemoryCache _cache) : IUpdateHandler
                 text: "Я принимаю только документы с расширением docx для ворд шаблонов и xlsx, содержащий данные для шаблона",
                 cancellationToken: cT);
         }
-    }
-
-    public Task HandlePollingErrorAsync(ITelegramBotClient botClient, Exception exception, CancellationToken cancellationToken)
-    {
-        throw new NotImplementedException();
     }
 }

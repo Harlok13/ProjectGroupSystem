@@ -11,7 +11,7 @@ using File = System.IO.File;
 
 namespace PGS.TemplatePlaceholderBot.Handlers;
 
-public class ExcelDataHandler(IMemoryCache _cache) : IUpdateHandler, IDocumentDownloader
+public class ExcelDataHandler(IMemoryCache _cache) : UpdateHandlerBase, IUpdateHandler, IDocumentDownloader
 {
     public async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken cT)
     {
@@ -54,7 +54,10 @@ public class ExcelDataHandler(IMemoryCache _cache) : IUpdateHandler, IDocumentDo
 
                 using (ExcelReader excelReader = ExcelReader.Open(excelPath))
                 {
-                    List<string> resultDocPaths = excelReader.CreateAndFillDocs(templatePath);
+                    // List<string> resultDocPaths = excelReader.CreateAndFillDocs(templatePath);
+                    List<Dictionary<string, object>> keyValuePairsList = excelReader.GetKeyValuePairs(templatePath);
+                    using WordReader wr = new WordReader(templatePath);
+                    List<string> resultDocPaths = wr.CreateWordsAndFillByTemplate(keyValuePairsList);
 
                     using (ZipArchiveHelper zipArchiveHelper = new ZipArchiveHelper(archivePath))
                     {
@@ -94,11 +97,6 @@ public class ExcelDataHandler(IMemoryCache _cache) : IUpdateHandler, IDocumentDo
                     cancellationToken: cT);
             }
         }
-    }
-
-    public Task HandlePollingErrorAsync(ITelegramBotClient botClient, Exception exception, CancellationToken cancellationToken)
-    {
-        throw new NotImplementedException();
     }
 
     private string GetExcelFileName(string excelPath) =>

@@ -11,4 +11,6 @@ public interface IFileStorage
     string RemoveTemplate(int index);
     
     string? GetTemplatePathByName(string templateName);
+
+    int GetTemplatesCount();
 }

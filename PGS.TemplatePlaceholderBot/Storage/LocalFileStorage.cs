@@ -54,4 +54,13 @@ public class LocalFileStorage : IFileStorage
 
         return templatePath;
     }
+
+    public int GetTemplatesCount()
+    {
+        int templatesCount = Directory
+            .GetFiles(EnvironmentHelper.GetTemplatesVolumePath())
+            .Length;
+
+        return templatesCount;
+    }
 }

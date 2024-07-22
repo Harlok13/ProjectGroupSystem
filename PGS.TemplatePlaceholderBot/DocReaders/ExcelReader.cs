@@ -1,12 +1,13 @@
 using Aspose.Cells;
+using Aspose.Cells.Drawing;
+using Serilog;
 
 namespace PGS.TemplatePlaceholderBot.DocReaders;
 
 public class ExcelReader : IDisposable
 {
     private Workbook _workbook = null!;
-    private string _filePath;
-    private List<string> _resultFilePaths = null!;
+    private string _filePath = null!;
 
     private ExcelReader() { }
     
@@ -29,29 +30,36 @@ public class ExcelReader : IDisposable
         return excelReader;
     }
     
-    public List<string> CreateAndFillDocs(string templatePath)
+    public List<Dictionary<string, object>> GetKeyValuePairs(string templatePath)
     {
         Worksheet sheet = _workbook.Worksheets[0];
-        int skipHeaderRow = 1;
+        int skipHeaderRow = 5;
+        int skipColumn = 3;
 
-        _resultFilePaths = new List<string>(sheet.Cells.MaxRow - skipHeaderRow);
+        List<Dictionary<string, object>> keyValuePairsList = new (sheet.Cells.MaxColumn - skipColumn);
         
         using WordReader wordReader = new WordReader(templatePath);
-        List<string> keywords = wordReader.GetKeywords();
         
-        for (int rowIndex = skipHeaderRow; rowIndex <= sheet.Cells.MaxRow; rowIndex++)
+        int imageIndex = 1;
+        int columnIndex = skipColumn;
+        
+        while (true)
         {
-            Row row = sheet.Cells.Rows[rowIndex];
+            char column = (char)('A' + columnIndex);
+            if (string.IsNullOrWhiteSpace(sheet.Cells[$"{column}5"].StringValue))
+                break;
 
-            Dictionary<string, string> keyValuePair = FillKeyValuePair(keywords, row);
+            Dictionary<string, object> keyValuePairs = FillKeyValuePair(column, skipHeaderRow, imageIndex, sheet);
+            keyValuePairsList.Add(keyValuePairs);
             
-            string resultFilePath = wordReader.CreateWordAndFillByTemplate(keyValuePair);
-            _resultFilePaths.Add(resultFilePath);
+            imageIndex++;
+            columnIndex++;
         }
 
-        return _resultFilePaths;
+        return keyValuePairsList;
     }
     
+    [Obsolete]
     public void CreateExcelByTemplate(string? templatePath)
     {
         ArgumentNullException.ThrowIfNull(templatePath);
@@ -64,11 +72,9 @@ public class ExcelReader : IDisposable
 
         for (int index = 0; index < keywords.Count; index++)
         {
-            // sheet.Cells[$"{(char)('A' + index)}{index + 1}"].PutValue(keywords[index]);
             char column = (char)('A' + index);
-            int row = index + 1; // Start from the first row
+            int row = index + 1;  // Start from the first row
 
-            // If the keyword is not the first one, shift its row by its index
             if (index > 0)
             {
                 row -= index;
@@ -79,6 +85,59 @@ public class ExcelReader : IDisposable
         
         _workbook.Save(_filePath);
     }
+
+    private Dictionary<string, object> FillKeyValuePair(char column, int startRowIndex, int imageIndex, Worksheet sheet)
+    {
+        Dictionary<string, object> keyValuePair = new();
+        
+        for (int rowIndex = 0; rowIndex <= 19 - startRowIndex; rowIndex++)
+        {
+            string columnName = $"{column}{rowIndex + startRowIndex}";
+            string key = sheet.Cells[$"A{rowIndex + startRowIndex}"].StringValue;
+            
+            Cell cell = sheet.Cells[columnName];
+
+            const string rowIndexOfPicture = "11";
+            if (columnName.EndsWith(rowIndexOfPicture))
+            {
+                try
+                {
+                    Picture pic = sheet.Pictures[imageIndex];
+                    keyValuePair.Add(key, pic ?? (object)"");
+
+                    continue;
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex.Message);
+                    if (ex.StackTrace is not null)
+                        Log.Error(ex.StackTrace);
+                    
+                    Log.Information("Failed to attach image.");
+                    continue;
+                }
+            }
+            keyValuePair.Add(key, cell.StringValue);
+        }
+        
+        // todo create class TemplatePairs with property FileName
+        const string rowIndexOfFileName = "7";
+        string fileName = sheet.Cells[$"{column}{rowIndexOfFileName}"].StringValue;
+        fileName = fileName.Replace("/", ":");  // escaping slash
+        
+        keyValuePair.Add("FileName", fileName);
+
+        return keyValuePair;
+    }
+    
+    #region DisposePattern
+
+    private bool _disposed;
+
+    ~ExcelReader()
+    {
+        Dispose(false);
+    }
     
     public void Dispose()
     {
@@ -86,16 +145,18 @@ public class ExcelReader : IDisposable
         GC.SuppressFinalize(this);
     }
     
-    private Dictionary<string, string> FillKeyValuePair(List<string> keywords, Row row)
+    private void Dispose(bool disposing)
     {
-        Dictionary<string, string> keyValuePair = new();
-            
-        for (int cellIndex = 0; cellIndex < row.Cast<Cell>().Count(); cellIndex++)
-        {
-            keyValuePair.Add(keywords[cellIndex], row[cellIndex].Value.ToString() ?? "");
-        }
+        if (_disposed)
+            return;
 
-        return keyValuePair;
+        if (disposing)
+        {
+            _workbook.Dispose();
+        }
+        
+        _disposed = true;
     }
 
+    #endregion
 }

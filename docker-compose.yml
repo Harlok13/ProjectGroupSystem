@@ -16,3 +16,15 @@ services:
     tty: true
     env_file:
       - ./PGS.TemplatePlaceholderBot/.env
+        
+  pgs.minio-storage:
+    image: bitnami/minio:2024.2.14
+    container_name: pgs.minio-storage
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: pgs_minio
+      MINIO_ROOT_PASSWORD: pgs_minio
+    volumes:
+      - ./PGS.TemplatePlaceholderBot/minio-data:/bitnami/minio/data
