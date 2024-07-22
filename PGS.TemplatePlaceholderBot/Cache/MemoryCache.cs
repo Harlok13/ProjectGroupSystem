@@ -15,12 +15,9 @@ public class MemoryCache : IMemoryCache
     {
         _storage = storage;
         
-        string? templateName = _storage.GetFirstTemplateName();
+        string templateName = _storage.GetFirstTemplateName() ?? "";
 
-        if (templateName is not null)
-        {
-            SetCurrentTemplate(templateName);
-        }
+        SetCurrentTemplate(templateName);
     }
     
     /// <inheritdoc/>

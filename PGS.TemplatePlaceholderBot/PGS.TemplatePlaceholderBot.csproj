@@ -32,6 +32,7 @@
 
     <ItemGroup>
       <Folder Include="files\templates\" />
+      <Folder Include="minio-data\" />
     </ItemGroup>
 
 </Project>

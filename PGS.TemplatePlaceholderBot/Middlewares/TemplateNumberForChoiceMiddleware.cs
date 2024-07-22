@@ -11,12 +11,12 @@ public class TemplateNumberForChoiceMiddleware : IMiddleware
 {
     public async Task HandleUpdateAsync(Update update, User user, Func<Task> next, CancellationToken cT)
     {
-        if (user.StateMachine.State != EBotState.WaitingTemplateNumberForChoice)
-            return;
+        // if (user.StateMachine.State != EBotState.WaitingTemplateNumberForChoice)
+        //     return;
         
         Log.Information("EBotState.WaitingTemplateNumberForChoice");
-        
-        await user.StateMachine.FireAsync(EBotTrigger.Cancel, cT);
+        await next();
+        // await user.StateMachine.FireAsync(EBotTrigger.Cancel, cT);
     }
 
     public Task HandlePollingErrorAsync(ITelegramBotClient botClient, Exception ex, CancellationToken cT)

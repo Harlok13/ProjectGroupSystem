@@ -1,6 +1,7 @@
 using PGS.TemplatePlaceholderBot.Cache;
 using PGS.TemplatePlaceholderBot.Enums;
 using PGS.TemplatePlaceholderBot.Exceptions;
+using PGS.TemplatePlaceholderBot.Handlers.Base;
 using PGS.TemplatePlaceholderBot.Keyboards;
 using PGS.TemplatePlaceholderBot.States;
 using PGS.TemplatePlaceholderBot.Storage;
@@ -12,7 +13,7 @@ using User = PGS.TemplatePlaceholderBot.Models.User;
 
 namespace PGS.TemplatePlaceholderBot.Handlers;
 
-public class TextMessageHandler(IMemoryCache _cache, IFileStorage _storage) : IUpdateHandler
+public class TextMessageHandler(IMemoryCache _cache, IFileStorage _storage) : UpdateHandlerBase, IUpdateHandler
 {
     public async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken cT)
     {
@@ -106,26 +107,11 @@ public class TextMessageHandler(IMemoryCache _cache, IFileStorage _storage) : IU
             // the user entered an incorrect template number, the error level is not required
             Log.Information(ex.Message);
             
-            await botClient.SendTextMessageAsync(
-                chatId: message.Chat.Id,
-                text: "Шаблона с таким номером нет, введите другое число.",
-                replyMarkup: InlineKeyboardBuilder.Build(ETemplateMenuKeyboard.Cancel),
-                cancellationToken: cT);
+            // await botClient.SendTextMessageAsync(
+            //     chatId: message.Chat.Id,
+            //     text: "Шаблона с таким номером нет, введите другое число.",
+            //     replyMarkup: InlineKeyboardBuilder.Build(ETemplateMenuKeyboard.Cancel),
+            //     cancellationToken: cT);
         }
-    }
-
-    public Task HandlePollingErrorAsync(ITelegramBotClient botClient, Exception exception,
-        CancellationToken cancellationToken)
-    {
-        string message = exception switch
-        {
-            _ => exception.ToString()
-        };
-
-        Log.Error(message);
-        if (exception.StackTrace is not null)
-            Log.Error(exception.StackTrace);
-
-        return Task.CompletedTask;
     }
 }
