@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using Aspose.Words;
 using DocumentFormat.OpenXml;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Wordprocessing;
@@ -7,6 +8,10 @@ using A = DocumentFormat.OpenXml.Drawing;
 using DW = DocumentFormat.OpenXml.Drawing.Wordprocessing;
 using PIC = DocumentFormat.OpenXml.Drawing.Pictures;
 using APIC = Aspose.Cells.Drawing;
+using Body = DocumentFormat.OpenXml.Wordprocessing.Body;
+using Document = Aspose.Words.Document;
+using Paragraph = DocumentFormat.OpenXml.Wordprocessing.Paragraph;
+using Run = DocumentFormat.OpenXml.Wordprocessing.Run;
 
 namespace PGS.TemplatePlaceholderBot.DocReaders;
 
@@ -35,7 +40,7 @@ public class WordReader(string _filePath) : IDisposable
 
         return keywords;
     }
-    
+
     public List<string> CreateWordsAndFillByTemplate(List<Dictionary<string, object>> keyValuePairsList)
     {
         List<string> resultFilePaths = new();
@@ -46,14 +51,31 @@ public class WordReader(string _filePath) : IDisposable
             var fileName = keyValuePairs["FileName"];
             var resultFilePath = $"{EnvironmentHelper.GetVolumePath()}/{fileName}_{fileNameIndex}.docx";
             CreateResultDoc(resultFilePath);
-            using WordprocessingDocument resultDoc = WordprocessingDocument.Open(path: resultFilePath, isEditable: true);
+            using WordprocessingDocument
+                resultDoc = WordprocessingDocument.Open(path: resultFilePath, isEditable: true);
 
             if (resultDoc.MainDocumentPart?.Document.Body is not { } resultBody)
                 throw new ArgumentNullException("The body of the word document is missing.");
-            
+
+            var runProperties = FindMostCommonStyle(_doc);
+
             #region process
             foreach (KeyValuePair<string, object> pair in keyValuePairs)
             {
+                foreach (var footerPart in resultDoc.MainDocumentPart.FooterParts)
+                {
+                    var textElements = footerPart.Footer.Descendants<Text>();
+                    foreach (var textElement in textElements)
+                    {
+                        if (!textElement.Text.Contains(pair.Key))
+                            continue;
+
+                        textElement.Text = textElement.Text.Replace($"<{pair.Key}>", pair.Value.ToString());
+                    }
+                    
+                    footerPart.Footer.Save();
+                }
+                
                 foreach (Paragraph paragraph in resultBody.Elements<Paragraph>())
                 {
                     string text = string.Join(string.Empty, paragraph.Descendants<Text>()
@@ -77,55 +99,103 @@ public class WordReader(string _filePath) : IDisposable
                         t.Remove();
                     }
             
+                    // InsertTextWithStyle(paragraph, text, runProperties);
                     paragraph.Append(new Run(new Text(text)));
                 }
             }
             #endregion
-            
+
             resultDoc.Save();
 
             resultFilePaths.Add(resultFilePath);
 
             fileNameIndex++;
         }
-        
+
         return resultFilePaths;
     }
-    
+
     private void CreateResultDoc(string resultFilePath)
     {
         using WordprocessingDocument resultDoc = WordprocessingDocument
             .Create(resultFilePath, WordprocessingDocumentType.Document);
+        //
+        // OpenXmlElement templateBody = _doc.MainDocumentPart?.Document.Body?.CloneNode(deep: true) 
+        //                               ?? throw new Exception("The body of the word document is missing.");
+        //
+        // resultDoc.AddMainDocumentPart();
+        // resultDoc.MainDocumentPart!.Document = new Document(templateBody);
+        // resultDoc.MainDocumentPart.Document.Save();
         
-        OpenXmlElement templateBody = _doc.MainDocumentPart?.Document.Body?.CloneNode(deep: true) 
-                                      ?? throw new Exception("The body of the word document is missing.");
+        foreach (var part in _doc.Parts)
+            resultDoc.AddPart(part.OpenXmlPart, part.RelationshipId);
+            
+        resultDoc.Save();
+    }
 
-        resultDoc.AddMainDocumentPart();
-        resultDoc.MainDocumentPart!.Document = new Document(templateBody);
-        resultDoc.MainDocumentPart.Document.Save();
+    private void InsertTextWithStyle(Paragraph paragraph, string text, RunProperties runProperties)
+    {
+        var run = new Run();
+        var textElement = new Text(text);
+
+        if (runProperties != null)
+        {
+            run.Append(runProperties.CloneNode(true));
+        }
+
+        run.Append(textElement);
+        paragraph.Append(run);
+    }
+
+    private RunProperties FindMostCommonStyle(WordprocessingDocument doc)
+    {
+        var styleCount = new Dictionary<string, int>();
+
+        foreach (var run in doc.MainDocumentPart.Document.Body.Descendants<Run>())
+        {
+            var runProperties = run.RunProperties?.CloneNode(true);
+            if (runProperties != null)
+            {
+                var styleHash = runProperties.OuterXml;
+                if (styleCount.ContainsKey(styleHash))
+                {
+                    styleCount[styleHash]++;
+                }
+                else
+                {
+                    styleCount[styleHash] = 1;
+                }
+            }
+        }
+
+        var mostCommonStyleHash = styleCount.OrderByDescending(x => x.Value).FirstOrDefault().Key;
+        var mostCommonStyle = doc.MainDocumentPart.Document.Body.Descendants<Run>()
+            .FirstOrDefault(r => r.RunProperties?.OuterXml == mostCommonStyleHash)?.RunProperties;
+
+        return mostCommonStyle?.CloneNode(true) as RunProperties;
     }
 
     #region Picture
-    
+
     private void InsertPicture(APIC.Picture pic, MainDocumentPart docPart, Paragraph paragraph)
     {
         using var ms = new MemoryStream(pic.Data);
         var imagePart = docPart.AddImagePart(ImagePartType.Jpeg);
         imagePart.FeedData(ms);
-        
+
         var relationshipId = docPart.GetIdOfPart(imagePart);
-            
+
         var drawing = CreateDrawingElement(pic, relationshipId);
-            
+
         var currentRun = paragraph.Elements<Run>().LastOrDefault();
         currentRun?.Append(drawing);
     }
-    
+
     static Drawing CreateDrawingElement(APIC.Picture picture, string relationshipId)
     {
         long width = picture.Width * 20000;
         long height = picture.Height * 20000;
-        
+
         var drawing = new Drawing(
             new DW.Inline(
                 new DW.Extent() { Cx = width, Cy = height },
@@ -190,9 +260,9 @@ public class WordReader(string _filePath) : IDisposable
 
         return drawing;
     }
-    
+
     #endregion
-    
+
     #region DisposePattern
 
     private bool _disposed;
@@ -201,7 +271,7 @@ public class WordReader(string _filePath) : IDisposable
     {
         Dispose(false);
     }
-    
+
     public void Dispose()
     {
         Dispose(true);
@@ -217,9 +287,9 @@ public class WordReader(string _filePath) : IDisposable
         {
             _doc.Dispose();
         }
-        
+
         _disposed = true;
     }
-    
+
     #endregion
 }
