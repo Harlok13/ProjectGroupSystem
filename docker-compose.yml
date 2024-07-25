@@ -11,8 +11,6 @@ services:
       - ./PGS.TemplatePlaceholderBot/templates:/app/templates
     environment:
       - ENVIRONMENT=Development
-      - TOKEN=${TOKEN}
-      - VOLUME_PATH=${VOLUME_PATH}
     stdin_open: true
     tty: true
     env_file:
