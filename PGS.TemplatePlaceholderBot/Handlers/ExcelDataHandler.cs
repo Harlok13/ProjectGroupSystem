@@ -61,6 +61,7 @@ public class ExcelDataHandler(IMemoryCache _cache) : UpdateHandlerBase, IUpdateH
 
                     using (ZipArchiveHelper zipArchiveHelper = new ZipArchiveHelper(archivePath))
                     {
+                        Log.Information("Archive creation has begun. Archive name: {ArchiveName}", archivePath);
                         zipArchiveHelper.FillZipArchive(resultDocPaths);
                     }
 
