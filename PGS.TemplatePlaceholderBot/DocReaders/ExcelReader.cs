@@ -50,10 +50,10 @@ public class ExcelReader : IDisposable
                 ? "A" 
                 : ((char)('A' + columnIndex)).ToString();
             
+            int tempIndex = columnIndex;
             if (columnIndex >= 26)
             {
-                int tempIndex = columnIndex;
-                while (tempIndex > 0)
+                while (tempIndex >= 26)
                 {
                     tempIndex -= 26;
                     column += (char)('A' + columnIndex % 26);
