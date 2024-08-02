@@ -109,8 +109,8 @@ public class WordReader(string _filePath) : IDisposable
                             if (i > 0)
                             {
                                 paragraph.AppendChild(new Run(new Break()));
-                                var paragraphProperties = new ParagraphProperties(
-                                    new Indentation() { Left = "7200" } // 720 twips = 0.5 inches
+                                ParagraphProperties paragraphProperties = new (
+                                    new Indentation() { Left = "720" } 
                                 );
                                 paragraph.PrependChild(paragraphProperties);
                             }
