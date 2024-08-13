@@ -1,5 +1,4 @@
 using System.Text.RegularExpressions;
-using Aspose.Words;
 using DocumentFormat.OpenXml;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Wordprocessing;
@@ -9,9 +8,6 @@ using DW = DocumentFormat.OpenXml.Drawing.Wordprocessing;
 using PIC = DocumentFormat.OpenXml.Drawing.Pictures;
 using APIC = Aspose.Cells.Drawing;
 using Body = DocumentFormat.OpenXml.Wordprocessing.Body;
-using Document = Aspose.Words.Document;
-using Justification = DocumentFormat.OpenXml.Math.Justification;
-using JustificationValues = DocumentFormat.OpenXml.Math.JustificationValues;
 using Paragraph = DocumentFormat.OpenXml.Wordprocessing.Paragraph;
 using Run = DocumentFormat.OpenXml.Wordprocessing.Run;
 
@@ -108,24 +104,19 @@ public class WordReader(string _filePath) : IDisposable
                         {
                             if (i > 0)
                             {
-                                paragraph.AppendChild(new Run(new Break()));
-                                var paragraphProperties = new ParagraphProperties(
-                                    new Indentation() { Left = "7200" } // 720 twips = 0.5 inches
-                                );
-                                paragraph.PrependChild(paragraphProperties);
+                                var pPr = paragraph.AppendChild(new ParagraphProperties());
+                                paragraph.ParagraphProperties!.Justification =
+                                    new DocumentFormat.OpenXml.Wordprocessing.Justification()
+                                    {
+                                        Val = DocumentFormat.OpenXml.Wordprocessing.JustificationValues.Left
+                                    };
+                                paragraph.ParagraphProperties.Indentation = new Indentation() { Left = "720" };
+                                pPr.AppendChild(new Run(new Break()));
                             }
                         
                             var run = new Run(new Text(parts[i]));
-                            // paragraph.AppendChild(new Run(new Text(parts[i]))
-                            // {
-                            //     RunProperties = GetRunProperties()
-                            // });
                             run.PrependChild(GetRunProperties());
                             
-                            var paragraphProperties2 = new ParagraphProperties(
-                                new DocumentFormat.OpenXml.Wordprocessing.Justification() { Val = DocumentFormat.OpenXml.Wordprocessing.JustificationValues.Left }
-                            );
-                            paragraph.PrependChild(paragraphProperties2);
                             paragraph.AppendChild(run);
                         }
                     }
@@ -135,11 +126,6 @@ public class WordReader(string _filePath) : IDisposable
                         newRun.PrependChild(GetRunProperties());
                         paragraph.AppendChild(newRun);
                     }
-                    
-                    // paragraph.AppendChild(newRun);
-            
-                    // InsertTextWithStyle(paragraph, text, runProperties);
-                    // paragraph.Append(new Run(new Text(text)));
                 }
             }
             #endregion
