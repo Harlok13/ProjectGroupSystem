@@ -112,6 +112,7 @@ public class WordReader(string _filePath) : IDisposable
                                     };
                                 paragraph.ParagraphProperties.Indentation = new Indentation() { Left = "720" };
                                 pPr.AppendChild(new Run(new Break()));
+
                             }
                         
                             var run = new Run(new Text(parts[i]));
